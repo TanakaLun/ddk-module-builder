@@ -58,3 +58,11 @@ jobs:
       with:
         name: modules
         path: /opt/ddk/src/${{ inputs.branch }}/${{ inputs.module_path }}/**/*.ko
+
+    - name: Upload kernel src
+      uses: actions/upload-artifact@v7
+      with:
+        name: modules-all
+        path: /opt/ddk/src/${{ inputs.branch }}/*
+
+    
