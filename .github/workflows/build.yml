@@ -49,6 +49,7 @@ jobs:
         fi
         
         $SRC/scripts/config --file $OUT/.config $CONFIG_ARGS
+        echo "CONFIG_IP_SET_MAX=65534" >> $OUT/.config
         make -C $SRC O=$OUT olddefconfig
         make -C $SRC O=$OUT modules_prepare
         make -C $SRC O=$OUT M=$SRC/$MODULE_PATH modules
@@ -58,11 +59,3 @@ jobs:
       with:
         name: modules
         path: /opt/ddk/src/${{ inputs.branch }}/${{ inputs.module_path }}/**/*.ko
-
-    - name: Upload kernel src
-      uses: actions/upload-artifact@v7
-      with:
-        name: modules-all
-        path: /opt/ddk/src/${{ inputs.branch }}/*
-
-    
