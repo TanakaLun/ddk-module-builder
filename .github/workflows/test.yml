@@ -11,6 +11,6 @@ jobs:
     steps:
     - name: Build 
       run: |
-        git clone https://github.com/aosp-mirror/kernel_common -b android16-6.12 \
-            --single-branch --depth=1
-        du -sh kernel_common
+        curl -L https://github.com/aosp-mirror/kernel_common/archive/refs/heads/android16-6.12.tar.gz | tar -xzf -
+        ls -l .
+        du -sh .
