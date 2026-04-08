@@ -1,0 +1,16 @@
+name: Test
+
+on:
+  workflow_dispatch:
+  push:
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+    - name: Build 
+      run: |
+        git clone https://github.com/aosp-mirror/kernel_common -b android16-6.12 \
+            --single-branch --depth=1
+        du -sh kernel_common
