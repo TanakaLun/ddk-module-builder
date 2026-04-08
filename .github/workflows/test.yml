@@ -1,0 +1,16 @@
+name: Test
+
+on:
+  workflow_dispatch:
+  push:
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+    - name: Build 
+      run: |
+        curl -L https://github.com/aosp-mirror/kernel_common/archive/refs/heads/android16-6.12.tar.gz | tar -xzf -
+        ls -l .
+        du -sh .
