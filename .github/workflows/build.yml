@@ -15,10 +15,11 @@ on:
       module_path:
         description: 'Module relative path in kernel tree (e.g., net/unix or net/netfilter/ipset)'
         required: true
+        default: 'net/netfilter'
       configs:
         description: 'Options pass to scripts/config, e.g., -m CONFIG_UNIX_DIAG or -m CONFIG_IP_SET'
-        required: false
-        default: ''
+        required: true
+        default: '-m CONFIG_IP_SET -m CONFIG_IP_SET_BITMAP_IP -m CONFIG_IP_SET_BITMAP_IPMAC -m CONFIG_IP_SET_BITMAP_PORT -m CONFIG_IP_SET_HASH_IP -m CONFIG_IP_SET_HASH_IPMARK -m CONFIG_IP_SET_HASH_IPPORT -m CONFIG_IP_SET_HASH_IPPORTIP -m CONFIG_IP_SET_HASH_IPPORTNET -m CONFIG_IP_SET_HASH_IPMAC -m CONFIG_IP_SET_HASH_MAC -m CONFIG_IP_SET_HASH_NETPORTNET -m CONFIG_IP_SET_HASH_NET -m CONFIG_IP_SET_HASH_NETNET -m CONFIG_IP_SET_HASH_NETPORT -m CONFIG_IP_SET_HASH_NETIFACE -m CONFIG_IP_SET_LIST_SET --set-val CONFIG_IP_SET_MAX 65534'
 
 jobs:
   build-ko:
