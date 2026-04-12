@@ -105,19 +105,16 @@ jobs:
         if [ -d "artifacts/netfilter" ]; then
           cp artifacts/netfilter/*.ko IPSET_LKM/netfilter/ 2>/dev/null || true
           
-          if [ -d "artifacts/netfilter/ipset" ]; then
-            cp artifacts/netfilter/ipset/*.ko IPSET_LKM/netfilter/ipset/ 2>/dev/null || true
-          fi
+        if [ -d "artifacts/netfilter/ipset" ]; then
+          cp artifacts/netfilter/ipset/*.ko IPSET_LKM/netfilter/ipset/ 2>/dev/null || true
+        fi
           
-          if [ -d "artifacts/netfilter/iptables" ]; then
-            cp artifacts/netfilter/iptables/*.ko IPSET_LKM/iptables/ 2>/dev/null || true
-          fi
-          
-          echo "✓ Copied from artifacts/netfilter/"
+        if [ -d "artifacts/netfilter/iptables" ]; then
+          cp artifacts/netfilter/iptables/*.ko IPSET_LKM/netfilter/iptables/ 2>/dev/null || true
         fi
 
     - name: Upload IPSET_LKM
       uses: actions/upload-artifact@v7
       with:
-        name: IPSET_LKM-${{ inputs.branch }}
+        name: IPSET-LKM-${{ inputs.branch }}
         path: IPSET_LKM/*
