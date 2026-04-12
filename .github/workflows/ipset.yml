@@ -104,7 +104,8 @@ jobs:
         
         if [ -d "artifacts/netfilter" ]; then
           cp artifacts/netfilter/*.ko IPSET_LKM/netfilter/ 2>/dev/null || true
-          
+        fi
+        
         if [ -d "artifacts/netfilter/ipset" ]; then
           cp artifacts/netfilter/ipset/*.ko IPSET_LKM/netfilter/ipset/ 2>/dev/null || true
         fi
