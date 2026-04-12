@@ -1,0 +1,126 @@
+name: Build IPSET Module
+run-name: Build on ${{ inputs.branch }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Kernel branch (e.g., android16-6.12, android15-6.6)'
+        required: true
+        default: 'android12-5.10'
+      ddk_version:
+        description: 'DDK version (default: 20260313)'
+        required: false
+        default: '20260313'
+      configs:
+        description: 'Options pass to scripts/config, e.g., -m CONFIG_UNIX_DIAG or -m CONFIG_IP_SET'
+        required: true
+        default: '-m CONFIG_IP_SET -m CONFIG_IP_SET_BITMAP_IP -m CONFIG_IP_SET_BITMAP_IPMAC -m CONFIG_IP_SET_BITMAP_PORT -m CONFIG_IP_SET_HASH_IP -m CONFIG_IP_SET_HASH_IPMARK -m CONFIG_IP_SET_HASH_IPPORT -m CONFIG_IP_SET_HASH_IPPORTIP -m CONFIG_IP_SET_HASH_IPPORTNET -m CONFIG_IP_SET_HASH_IPMAC -m CONFIG_IP_SET_HASH_MAC -m CONFIG_IP_SET_HASH_NETPORTNET -m CONFIG_IP_SET_HASH_NET -m CONFIG_IP_SET_HASH_NETNET -m CONFIG_IP_SET_HASH_NETPORT -m CONFIG_IP_SET_HASH_NETIFACE -m CONFIG_IP_SET_LIST_SET --set-val CONFIG_IP_SET_MAX 65534 -m CONFIG_NETFILTER_XT_MATCH_ADDRTYPE -m CONFIG_NETFILTER_XT_SET -m CONFIG_IP6_NF_TARGET_MASQUERADE -m CONFIG_IP6_NF_NAT'
+
+jobs:
+  build-ko:
+    name: Build IPSET Module
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/ylarod/ddk-min:${{ inputs.branch }}-${{ inputs.ddk_version }}
+      options: --privileged
+
+    steps:
+    - name: Build 
+      run: |
+        BRANCH=${{ inputs.branch }}
+        CONFIGS="${{ inputs.configs }}"
+        cat <<-EOF > info.txt
+        BRANCH=$BRANCH
+        CONFIGS="$CONFIGS"
+        DDK_VERSION=${{ inputs.ddk_version }}
+        EOF
+        
+        SRC=/opt/ddk/src/$BRANCH
+        mkdir out
+        OUT=$(realpath out)
+        make -C $SRC O=$OUT gki_defconfig
+        
+        # Build config parameters from the input
+        CONFIG_ARGS="$CONFIGS"
+        
+        # Apply CONFIG_CFI_ICALL_NORMALIZE_INTEGERS only for android16-6.12
+        if [ "$BRANCH" = "android16-6.12" ]; then
+          CONFIG_ARGS="$CONFIG_ARGS -e CONFIG_CFI_ICALL_NORMALIZE_INTEGERS"
+        fi
+        
+        $SRC/scripts/config --file $OUT/.config $CONFIG_ARGS
+        make -C $SRC O=$OUT olddefconfig
+        make -C $SRC O=$OUT modules_prepare
+        make -C $SRC O=$OUT M=$SRC/net/netfilter modules
+        make -C $SRC O=$OUT M=$SRC/net/ipv6/netfilter modules
+
+    - name: Prepare Artifacts
+      run: |
+        mkdir artifacts
+        
+        SRC="/opt/ddk/src/${{ inputs.branch }}"
+        
+        NETFILTER_SRC="$SRC/net/netfilter"
+        if [ -d "$NETFILTER_SRC" ]; then
+          find "$NETFILTER_SRC" -type f -name '*.ko' -print0 | while IFS= read -r -d '' f; do
+            rel="${f#$SRC/}"
+            dest_path="artifacts/${rel#net/}"
+            mkdir -p "$(dirname "$dest_path")"
+            mv "$f" "$dest_path"
+            echo "✓ Moved: ${rel#net/}"
+          done
+        fi
+        
+        IPV6_SRC="$SRC/net/ipv6/netfilter"
+        if [ -d "$IPV6_SRC" ]; then
+          find "$IPV6_SRC" -type f -name '*.ko' -print0 | while IFS= read -r -d '' f; do
+            filename=$(basename "$f")
+            mkdir -p "artifacts/netfilter/iptables"
+            mv "$f" "artifacts/netfilter/iptables/${filename}"
+            echo "✓ Moved: iptables/${filename}"
+          done
+        fi
+        
+        cp out/.config artifacts/kernel_config.txt 2>/dev/null || echo "No .config found"
+        cp info.txt artifacts/
+        
+        echo "=== Final artifacts structure ==="
+        find artifacts -type f | sort
+
+    - name: Upload kernel modules and config files
+      uses: actions/upload-artifact@v7
+      with:
+        name: modules-${{ inputs.branch }}
+        path: artifacts
+        
+    - name: Package as IPSET_LKM
+      run: |
+        git clone --depth 1 https://github.com/TanakaLun/IPSET_LKM.git
+        rm -rf ./IPSET_LKM/.git
+        
+        mkdir -p IPSET_LKM/netfilter/ipset
+        mkdir -p IPSET_LKM/netfilter/iptables
+        
+        SRC="/opt/ddk/src/${{ inputs.branch }}/net"
+        
+        if [ -d "$SRC/netfilter" ]; then
+          cp $SRC/netfilter/*.ko IPSET_LKM/netfilter/ 2>/dev/null || true
+          echo "✓ Copied netfilter/*.ko"
+        fi
+        
+        if [ -d "$SRC/netfilter/ipset" ]; then
+          cp $SRC/netfilter/ipset/*.ko IPSET_LKM/netfilter/ipset/ 2>/dev/null || true
+          echo "✓ Copied netfilter/ipset/*.ko"
+        fi
+        
+        if [ -d "$SRC/ipv6/netfilter" ]; then
+          cp $SRC/ipv6/netfilter/*.ko IPSET_LKM/netfilter/iptables/ 2>/dev/null || true
+          echo "✓ Copied ipv6/netfilter/*.ko to netfilter/iptables/"
+        fi
+
+    - name: Upload IPSET_LKM
+      uses: actions/upload-artifact@v7
+      with:
+        name: IPSET_LKM-${{ inputs.branch }}
+        path: IPSET_LKM/*
