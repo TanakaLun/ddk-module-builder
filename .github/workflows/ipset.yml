@@ -102,21 +102,18 @@ jobs:
         mkdir -p IPSET_LKM/netfilter/ipset
         mkdir -p IPSET_LKM/netfilter/iptables
         
-        SRC="/opt/ddk/src/${{ inputs.branch }}/net"
-        
-        if [ -d "$SRC/netfilter" ]; then
-          cp $SRC/netfilter/*.ko IPSET_LKM/netfilter/ 2>/dev/null || true
-          echo "✓ Copied netfilter/*.ko"
-        fi
-        
-        if [ -d "$SRC/netfilter/ipset" ]; then
-          cp $SRC/netfilter/ipset/*.ko IPSET_LKM/netfilter/ipset/ 2>/dev/null || true
-          echo "✓ Copied netfilter/ipset/*.ko"
-        fi
-        
-        if [ -d "$SRC/ipv6/netfilter" ]; then
-          cp $SRC/ipv6/netfilter/*.ko IPSET_LKM/netfilter/iptables/ 2>/dev/null || true
-          echo "✓ Copied ipv6/netfilter/*.ko to netfilter/iptables/"
+        if [ -d "artifacts/netfilter" ]; then
+          cp artifacts/netfilter/*.ko IPSET_LKM/netfilter/ 2>/dev/null || true
+          
+          if [ -d "artifacts/netfilter/ipset" ]; then
+            cp artifacts/netfilter/ipset/*.ko IPSET_LKM/netfilter/ipset/ 2>/dev/null || true
+          fi
+          
+          if [ -d "artifacts/netfilter/iptables" ]; then
+            cp artifacts/netfilter/iptables/*.ko IPSET_LKM/iptables/ 2>/dev/null || true
+          fi
+          
+          echo "✓ Copied from artifacts/netfilter/"
         fi
 
     - name: Upload IPSET_LKM
