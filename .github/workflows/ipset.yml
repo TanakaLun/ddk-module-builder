@@ -26,6 +26,12 @@ jobs:
       options: --privileged
 
     steps:
+    - name: Upload ddk
+      uses: actions/upload-artifact@v7
+      with:
+        name: ddk
+        path: /opt/ddk/src/${{ inputs.branch }}
+        
     - name: Build 
       run: |
         BRANCH=${{ inputs.branch }}
